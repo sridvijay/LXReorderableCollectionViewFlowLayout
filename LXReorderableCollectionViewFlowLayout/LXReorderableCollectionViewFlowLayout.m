@@ -293,7 +293,7 @@ static NSString * const kLXCollectionViewKeyPath = @"collectionView";
             UIImageView *highlightedImageView = [[UIImageView alloc] initWithImage:[collectionViewCell LX_rasterizedImage]];
             highlightedImageView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
             highlightedImageView.alpha = 1.0f;
-            
+
             collectionViewCell.highlighted = NO;
             UIImageView *imageView = [[UIImageView alloc] initWithImage:[collectionViewCell LX_rasterizedImage]];
             imageView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
@@ -301,6 +301,14 @@ static NSString * const kLXCollectionViewKeyPath = @"collectionView";
             
             [self.currentView addSubview:imageView];
             [self.currentView addSubview:highlightedImageView];
+            
+            CALayer *layer  = self.currentView.layer;
+            [layer setShadowOffset:CGSizeMake(1, 2)];
+            [layer setShadowRadius:6.0];
+            [layer setShadowColor:[UIColor darkGrayColor].CGColor] ;
+            [layer setShadowOpacity:0.3];
+            [layer setShadowPath:[[UIBezierPath bezierPathWithRect:self.currentView.bounds] CGPath]];
+            
             [self.collectionView addSubview:self.currentView];
             
             self.currentViewCenter = self.currentView.center;
@@ -355,6 +363,12 @@ static NSString * const kLXCollectionViewKeyPath = @"collectionView";
                  animations:^{
                      __strong typeof(self) strongSelf = weakSelf;
                      if (strongSelf) {
+                         CALayer *layer = strongSelf.currentView.layer;
+                         [layer setShadowOffset:CGSizeMake(1, 2)];
+                         [layer setShadowRadius:2.0];
+                         [layer setShadowColor:[UIColor darkGrayColor].CGColor] ;
+                         [layer setShadowOpacity:0.3];
+                         [layer setShadowPath:[[UIBezierPath bezierPathWithRect:self.currentView.bounds] CGPath]];
                          strongSelf.currentView.transform = CGAffineTransformMakeScale(1.0f, 1.0f);
                          strongSelf.currentView.center = layoutAttributes.center;
                      }
