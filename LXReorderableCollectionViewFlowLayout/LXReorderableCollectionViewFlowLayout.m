@@ -1,7 +1,7 @@
 //
 //  LXReorderableCollectionViewFlowLayout.m
 //
-//  Created by Stan Chang Khin Boon on 1/10/12.
+//  Created by Vijay Sridhar on 1/10/12.
 //  Copyright (c) 2012 d--buzz. All rights reserved.
 //
 
@@ -302,13 +302,6 @@ static NSString * const kLXCollectionViewKeyPath = @"collectionView";
             [self.currentView addSubview:imageView];
             [self.currentView addSubview:highlightedImageView];
             
-            CALayer *layer  = self.currentView.layer;
-            [layer setShadowOffset:CGSizeMake(1, 2)];
-            [layer setShadowRadius:6.0];
-            [layer setShadowColor:[UIColor darkGrayColor].CGColor] ;
-            [layer setShadowOpacity:0.3];
-            [layer setShadowPath:[[UIBezierPath bezierPathWithRect:self.currentView.bounds] CGPath]];
-            
             [self.collectionView addSubview:self.currentView];
             
             self.currentViewCenter = self.currentView.center;
@@ -321,6 +314,12 @@ static NSString * const kLXCollectionViewKeyPath = @"collectionView";
              animations:^{
                  __strong typeof(self) strongSelf = weakSelf;
                  if (strongSelf) {
+                     CALayer *layer  = strongSelf.currentView.layer;
+                     [layer setShadowOffset:CGSizeMake(1, 2)];
+                     [layer setShadowRadius:6.0];
+                     [layer setShadowColor:[UIColor darkGrayColor].CGColor] ;
+                     [layer setShadowOpacity:0.3];
+                     [layer setShadowPath:[[UIBezierPath bezierPathWithRect:strongSelf.currentView.bounds] CGPath]];
                      strongSelf.currentView.transform = CGAffineTransformMakeScale(1.1f, 1.1f);
                      highlightedImageView.alpha = 0.0f;
                      imageView.alpha = 1.0f;
@@ -471,6 +470,79 @@ static NSString * const kLXCollectionViewKeyPath = @"collectionView";
     }
     
     return layoutAttributes;
+}
+
+- (CGPoint)targetContentOffsetForProposedContentOffset:(CGPoint)proposedContentOffset withScrollingVelocity:(CGPoint)velocity
+{
+    if (self.layout == 0) {
+    CGFloat offSetAdjustment = MAXFLOAT;
+    CGFloat horizontalCenter = (CGFloat) (proposedContentOffset.x + (self.collectionView.bounds.size.width / 2.0));
+    
+    CGRect targetRect = CGRectMake(proposedContentOffset.x, 0.0, self.collectionView.bounds.size.width, self.collectionView.bounds.size.height);
+        
+    NSArray *array = [self layoutAttributesForElementsInRect:targetRect];
+    for (UICollectionViewLayoutAttributes *layoutAttributes in array)
+    {
+        if(layoutAttributes.representedElementCategory == UICollectionElementCategoryCell)
+        {
+            CGFloat itemHorizontalCenter = layoutAttributes.center.x;
+            if (ABS(itemHorizontalCenter - horizontalCenter) < ABS(offSetAdjustment))
+            {
+                offSetAdjustment = itemHorizontalCenter - horizontalCenter;
+            }
+        }
+    }
+    
+    CGFloat nextOffset = proposedContentOffset.x + offSetAdjustment;
+    
+    do {
+        proposedContentOffset.x = nextOffset;
+        CGFloat deltaX = proposedContentOffset.x - self.collectionView.contentOffset.x;
+        CGFloat velX = velocity.x;
+        
+        if(deltaX == 0.0 || velX == 0 || (velX > 0.0 && deltaX > 0.0) || (velX < 0.0 && deltaX < 0.0))
+        {
+            break;
+        }
+        
+        if(velocity.x > 0.0)
+        {
+            nextOffset += [self snapStep];
+        }
+        else if(velocity.x < 0.0)
+        {
+            nextOffset -= [self snapStep];
+        }
+    } while ([self isValidOffset:nextOffset]);
+    
+    proposedContentOffset.y = 0.0;
+    }
+    
+    return proposedContentOffset;
+}
+
+- (BOOL)isValidOffset:(CGFloat)offset
+{
+    return (offset >= [self minContentOffset] && offset <= [self maxContentOffset]);
+}
+
+- (CGFloat)minContentOffset
+{
+    return -self.collectionView.contentInset.left;
+}
+
+- (CGFloat)maxContentOffset
+{
+    return [self minContentOffset] + self.collectionView.contentSize.width - self.itemSize.width;
+}
+
+- (CGFloat)snapStep
+{
+    return self.itemSize.width + self.minimumLineSpacing;
+}
+
+- (BOOL)shouldInvalidateLayoutForBoundsChange:(CGRect)newBounds {
+    return YES;
 }
 
 #pragma mark - UIGestureRecognizerDelegate methods
